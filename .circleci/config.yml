@@ -1,0 +1,20 @@
+version: 2.18
+jobs:
+  build:
+    working_directory: ~/album-server
+    docker:
+      - image: circleci/node:12.13.0
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - ${SSH_THUMBPRINT}
+      - checkout
+      - run:
+          name: update-npm
+          command: 'sudo npm install -g npm@latest'
+      - run:
+          name: install-npm-wee
+          command: npm ci
+      - run: # run tests
+          name: test
+          command: ssh ${SSH_USER}@${SSH_HOST}
