@@ -17,6 +17,7 @@ const app = express();
 const port = 3000;
 
 const STATIC_PATH = path.resolve(process.env.STATIC_PATH || './static');
+debug('Static path is ', STATIC_PATH);
 
 const photos = {};
 const init = async () => {
