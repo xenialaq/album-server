@@ -1,9 +1,11 @@
+build_env: &build_env
+  working_directory: ~/album-server
+  docker:
+    - image: circleci/node:12.13.0
 version: 2.18
 jobs:
   install:
-    working_directory: ~/album-server
-    docker:
-      - image: circleci/node:12.13.0
+    <<: *build_env
     steps:
       - checkout
       - run:
@@ -13,7 +15,7 @@ jobs:
           name: install-npm-wee
           command: npm ci
   deploy:
-    working_directory: ~/album-server
+    <<: *build_env
     steps:
       - add_ssh_keys
       - run:
