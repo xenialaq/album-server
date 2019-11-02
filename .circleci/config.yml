@@ -1,13 +1,10 @@
 version: 2.18
 jobs:
-  build:
+  install:
     working_directory: ~/album-server
     docker:
       - image: circleci/node:12.13.0
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - ${SSH_THUMBPRINT}
       - checkout
       - run:
           name: update-npm
@@ -15,8 +12,17 @@ jobs:
       - run:
           name: install-npm-wee
           command: npm ci
+  deploy:
+    working_directory: ~/album-server
+    steps:
+      - add_ssh_keys
       - run:
-          name: deploy
+          name: ssh-deploy
           command: |
             echo ${SSH_KNOWN_HOST} > ~/.ssh/known_hosts
             ssh ${SSH_USER}@${SSH_HOST}
+workflows:
+  install_and_deploy:
+    jobs:
+      - install
+      - deploy
