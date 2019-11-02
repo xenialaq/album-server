@@ -24,7 +24,7 @@ jobs:
           command: |
             echo ${SSH_KNOWN_HOST} > ~/.ssh/known_hosts
             scp -r ~/album-server ${SSH_USER}@${SSH_HOST}:~/app
-            ssh ${SSH_USER}@${SSH_HOST} "ls ~/app/album-server"
+            ssh ${SSH_USER}@${SSH_HOST} "sh ~/run-app.sh"
 workflows:
   version: 2
   install_and_deploy:
