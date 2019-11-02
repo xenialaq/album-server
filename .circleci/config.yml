@@ -23,6 +23,7 @@ jobs:
           name: ssh-deploy
           command: |
             echo ${SSH_KNOWN_HOST} > ~/.ssh/known_hosts
+            rm -rf ~/album-server/.git
             scp -r ~/album-server ${SSH_USER}@${SSH_HOST}:~/app
             ssh ${SSH_USER}@${SSH_HOST} "sh ~/run-app.sh"
 workflows:
