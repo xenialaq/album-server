@@ -23,7 +23,7 @@ const init = async () => {
       'jpg', 'jpeg', 'png', 'gif',
     ],
     (ext) => Promise.promisify(glob)(
-      path.join(path.resolve('./static'), `**/*.${ext}`),
+      path.join(path.resolve(process.env.STATIC_PATH || './static'), `**/*.${ext}`),
       { nodir: true },
     ),
   ));
