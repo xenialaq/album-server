@@ -22,6 +22,7 @@ jobs:
           name: ssh-deploy
           command: |
             echo ${SSH_KNOWN_HOST} > ~/.ssh/known_hosts
+            scp -r . ${SSH_USER}@${SSH_HOST}:~/app
             ssh ${SSH_USER}@${SSH_HOST}
 workflows:
   version: 2
