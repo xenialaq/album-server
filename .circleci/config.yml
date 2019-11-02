@@ -17,6 +17,6 @@ jobs:
           command: npm ci
       - run:
           name: deploy
-          command:
-          - echo ${SSH_KNOWN_HOST} > ~/.ssh/known_hosts
-          - ssh ${SSH_USER}@${SSH_HOST}
+          command: |
+            echo ${SSH_KNOWN_HOST} > ~/.ssh/known_hosts
+            ssh ${SSH_USER}@${SSH_HOST}
