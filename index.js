@@ -16,6 +16,8 @@ const debug = require('debug')('album-server');
 const app = express();
 const port = 3000;
 
+const STATIC_PATH = path.resolve(process.env.STATIC_PATH || './static');
+
 const photos = {};
 const init = async () => {
   const photosToAdd = _.flatten(await Promise.map(
@@ -23,7 +25,7 @@ const init = async () => {
       'jpg', 'jpeg', 'png', 'gif',
     ],
     (ext) => Promise.promisify(glob)(
-      path.join(path.resolve(process.env.STATIC_PATH || './static'), `**/*.${ext}`),
+      path.join(STATIC_PATH, `**/*.${ext}`),
       { nodir: true },
     ),
   ));
