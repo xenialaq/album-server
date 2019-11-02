@@ -22,6 +22,7 @@ jobs:
             echo ${SSH_KNOWN_HOST} > ~/.ssh/known_hosts
             ssh ${SSH_USER}@${SSH_HOST}
 workflows:
+  version: 2
   install_and_deploy:
     jobs:
       - install
