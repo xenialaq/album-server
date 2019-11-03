@@ -8,7 +8,7 @@ module.exports = {
     let size = `${width}x${height}`;
     if (width === module.exports.AUTO) {
       size = `x${height}`;
-    } else if (height === this.auto) {
+    } else if (height === module.exports.AUTO) {
       size = `${width}x`;
     }
     const args = [
