@@ -196,8 +196,8 @@ app.get('/thumbs/:id', [
 const ui = express();
 ui.use(cors());
 const uiPort = 3001;
-ui.use('/static', express.static('ui/static'));
-ui.get('/*', (req, res) => {
+ui.use('/app/static', express.static('ui/static'));
+ui.get('/app/photos/*', (req, res) => {
   res.sendFile(path.resolve('ui/index.html'));
 });
 ui.listen(uiPort, () => debug(`UI listening on port ${uiPort}!`));
