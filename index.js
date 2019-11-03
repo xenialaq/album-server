@@ -52,6 +52,9 @@ const init = async () => {
   });
 };
 
+const PHOTO_MIME = 'image/jpeg';
+const THUMB_MIME = 'image/jpeg';
+
 app.get('/photos', [
   query('from').custom((from) => {
     if (from === undefined) return true;
@@ -130,7 +133,7 @@ app.get('/d/:id', [
     return;
   }
   const photo = photos[req.params.id];
-  res.sendFile(photo.path);
+  res.sendFile(photo.path, PHOTO_MIME);
 });
 
 const sendFile = (res, file, mime) => {
@@ -156,8 +159,6 @@ app.get('/thumbs/:id', [
     send404(req.params.id, res);
     return;
   }
-  const THUMB_MIME = 'image/jpeg';
-
 
   const photo = photos[req.params.id];
   if (photo.thumbPath) {
@@ -176,6 +177,7 @@ app.get('/thumbs/:id', [
 
   debug('Use imageMagick to scale down image.');
   const thumbPath = path.join(TEMP_PATH, chance.hash());
+  sendFile(res, photo.path, PHOTO_MIME);
   if (width > height) {
     await thumbGen({
       width: THUMB_DIM, height: AUTO, src: photo.path, out: thumbPath, debug,
@@ -186,7 +188,6 @@ app.get('/thumbs/:id', [
     });
   }
   photo.thumbPath = thumbPath;
-  sendFile(res, photo.thumbPath, THUMB_MIME);
 });
 
 
