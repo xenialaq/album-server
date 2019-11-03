@@ -13,7 +13,6 @@ const jimp = require('jimp');
 const sizeOf = require('image-size');
 const { writeFile, ensureDirSync, stat } = require('fs-extra');
 const debug = require('debug')('album-server');
-
 const cors = require('cors');
 
 const app = express();
@@ -52,11 +51,6 @@ const init = async () => {
     };
   });
 };
-
-// respond with "hello world" when a GET request is made to the homepage
-app.get('/', (req, res) => {
-  res.send('hello world');
-});
 
 app.get('/photos', [
   query('from').custom((from) => {
@@ -198,4 +192,14 @@ app.get('/thumbs/:id', [
   sendFile(res, photo.thumbPath, THUMB_MIME);
 });
 
-init().then(() => app.listen(port, () => debug(`Example app listening on port ${port}!`)));
+
+const ui = express();
+ui.use(cors());
+const uiPort = 3001;
+ui.use('/static', express.static('ui/static'));
+ui.get('/*', (req, res) => {
+  res.sendFile(path.resolve('ui/index.html'));
+});
+ui.listen(uiPort, () => debug(`UI listening on port ${uiPort}!`));
+
+init().then(() => app.listen(port, () => debug(`Server listening on port ${port}!`)));
