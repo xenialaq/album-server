@@ -3,6 +3,7 @@ const express = require('express');
 const glob = require('glob');
 const path = require('path');
 const Promise = require('bluebird');
+const filesize = require('filesize');
 const chance = require('chance').Chance();
 const {
   query, param, validationResult, sanitizeQuery,
@@ -10,14 +11,22 @@ const {
 const { isInt, isHexadecimal } = require('validator');
 const jimp = require('jimp');
 const sizeOf = require('image-size');
-
+const { writeFile, ensureDirSync, stat } = require('fs-extra');
 const debug = require('debug')('album-server');
 
+const cors = require('cors');
+
 const app = express();
+app.use(cors());
 const port = 3000;
 
 const STATIC_PATH = path.resolve(process.env.STATIC_PATH || './static');
 debug('Static path is ', STATIC_PATH);
+ensureDirSync(STATIC_PATH);
+
+const TEMP_PATH = path.resolve(process.env.TEMP_PATH || './temp');
+debug('Temp path is ', TEMP_PATH);
+ensureDirSync(TEMP_PATH);
 
 const photos = {};
 const init = async () => {
@@ -30,17 +39,19 @@ const init = async () => {
       { nodir: true },
     ),
   ));
-  photosToAdd.forEach((p) => {
+  await Promise.map(photosToAdd, async (p) => {
+    const { width, height } = await Promise.promisify(sizeOf)(p);
+    const onDisk = (await Promise.promisify(stat)(p)).size;
     const hash = chance.hash();
     photos[hash] = {
       path: p,
       url: `/d/${hash}`,
       thumb: `/thumbs/${hash}`,
       name: path.basename(p),
+      size: { width, height, onDisk: filesize(onDisk) },
     };
   });
 };
-init();
 
 // respond with "hello world" when a GET request is made to the homepage
 app.get('/', (req, res) => {
@@ -70,7 +81,11 @@ app.get('/photos', [
     req.query.from,
     req.query.max,
   );
-  res.send(paginatedPhotos);
+  res.send({
+    photos: paginatedPhotos,
+    pages: Math.ceil(Object.keys(photos).length / req.query.max),
+    currentPage: Math.floor(req.query.from / req.query.max),
+  });
 });
 
 const hashValidator = param('id').custom((id) => {
@@ -102,6 +117,7 @@ app.get('/photos/:id', [
   const photo = photos[req.params.id];
   res.send({
     name: photo.name,
+    size: photo.size,
     thumb: photo.thumb,
     url: photo.url,
   });
@@ -123,6 +139,12 @@ app.get('/d/:id', [
   res.sendFile(photo.path);
 });
 
+const sendFile = (res, file, mime) => {
+  debug('Send', file);
+  res.set('Content-Type', mime);
+  res.sendFile(file);
+};
+
 app.get('/thumbs/:id', [
   hashValidator,
   query('d').custom((d) => {
@@ -140,15 +162,24 @@ app.get('/thumbs/:id', [
     send404(req.params.id, res);
     return;
   }
+  const THUMB_MIME = 'image/jpeg';
+
+
   const photo = photos[req.params.id];
-  const { width, height } = await Promise.promisify(sizeOf)(photo.path);
+  if (photo.thumbPath) {
+    sendFile(res, photo.thumbPath, THUMB_MIME);
+    return;
+  }
+
+  const { size: { width, height } } = photo;
   debug(photo.path, width, height);
   const THUMB_DIM = req.query.d;
   if (width <= THUMB_DIM && height <= THUMB_DIM) {
-    debug('Send original image as thumb.');
-    res.sendFile(photo.path);
+    photo.thumbPath = photo.path;
+    sendFile(res, photo.thumbPath, THUMB_MIME);
     return;
   }
+
   debug('Use jimp to scale down image.');
   const image = await jimp.read(photo.path);
   if (width > height) {
@@ -156,10 +187,15 @@ app.get('/thumbs/:id', [
   } else {
     image.resize(jimp.AUTO, THUMB_DIM);
   }
-  const THUMB_MIME = 'image/jpeg';
-  res.set('Content-Type', THUMB_MIME);
-  res.send(await image.getBufferAsync(THUMB_MIME));
+
+  const buffer = await image.getBufferAsync(THUMB_MIME);
+  const thumbPath = path.join(TEMP_PATH, chance.hash());
+  await Promise.promisify(writeFile)(
+    thumbPath,
+    buffer,
+  );
+  photo.thumbPath = thumbPath;
+  sendFile(res, photo.thumbPath, THUMB_MIME);
 });
 
-
-app.listen(port, () => debug(`Example app listening on port ${port}!`));
+init().then(() => app.listen(port, () => debug(`Example app listening on port ${port}!`)));
