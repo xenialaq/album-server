@@ -9,11 +9,11 @@ const {
   query, param, validationResult, sanitizeQuery,
 } = require('express-validator');
 const { isInt, isHexadecimal } = require('validator');
-const jimp = require('jimp');
 const sizeOf = require('image-size');
-const { writeFile, ensureDirSync, stat } = require('fs-extra');
+const { ensureDirSync, stat } = require('fs-extra');
 const debug = require('debug')('album-server');
 const cors = require('cors');
+const { AUTO, thumbGen } = require('./thumb-gen');
 
 const app = express();
 app.use(cors());
@@ -174,20 +174,17 @@ app.get('/thumbs/:id', [
     return;
   }
 
-  debug('Use jimp to scale down image.');
-  const image = await jimp.read(photo.path);
-  if (width > height) {
-    image.resize(THUMB_DIM, jimp.AUTO);
-  } else {
-    image.resize(jimp.AUTO, THUMB_DIM);
-  }
-
-  const buffer = await image.getBufferAsync(THUMB_MIME);
+  debug('Use imageMagick to scale down image.');
   const thumbPath = path.join(TEMP_PATH, chance.hash());
-  await Promise.promisify(writeFile)(
-    thumbPath,
-    buffer,
-  );
+  if (width > height) {
+    await thumbGen({
+      width: THUMB_DIM, height: AUTO, src: photo.path, out: thumbPath, debug,
+    });
+  } else {
+    await thumbGen({
+      width: AUTO, height: THUMB_DIM, src: photo.path, out: thumbPath, debug,
+    });
+  }
   photo.thumbPath = thumbPath;
   sendFile(res, photo.thumbPath, THUMB_MIME);
 });
