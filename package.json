@@ -21,7 +21,7 @@
     "glob": "^7.1.5",
     "image-size": "^0.8.3",
     "lodash": "^4.17.15",
-    "validator": "^12.0.0"
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "eslint": "^6.6.0",
